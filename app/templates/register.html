@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Behavioural Login Verification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="background-glow"></div>
+    <main class="container">
+        <header class="header-card text-center">
+            <div class="badge">Authentication</div>
+            <h1>Create Account</h1>
+            <p class="subtitle">Register to setup your baseline for behavioural verification.</p>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="form-card">
+            <form action="{{ url_for('auth.register') }}" method="POST" id="register-form" autocomplete="off">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="Choose a username" value="{{ username or '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email" value="{{ email or '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Create a strong password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-input" placeholder="Confirm your password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Register Account</button>
+            </form>
+
+            <div class="form-footer">
+                <p>Already have an account? <a href="{{ url_for('auth.login') }}" class="link">Log In</a></p>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>&copy; 2026 Behavioural Verification Security Platform &bull; Step 2 Auth</p>
+        </footer>
+    </main>
+</body>
+</html>

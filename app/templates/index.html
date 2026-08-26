@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Behavioural Login Verification System</title>
+    <meta name="description" content="Cyber Security Project - Behavioural Login Verification Using Keystroke Dynamics, Mouse Movement, and Contextual Risk Signals">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="background-glow"></div>
+    <main class="container">
+        <header class="header-card">
+            <div class="badge">Cyber Security Project</div>
+            <h1 id="main-title">Behavioural Login Verification System</h1>
+            <p class="subtitle">
+                Continuous authentication leveraging keystroke dynamics, mouse kinetics, and contextual risk analysis.
+            </p>
+        </header>
+
+        <section class="nav-card text-center" style="background: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="width: auto; padding: 0.75rem 1.75rem;">Login Portal (Keystroke Active)</a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-secondary" style="padding: 0.75rem 1.75rem;">Register New Account</a>
+            <a href="{{ url_for('auth.dashboard') }}" class="btn btn-secondary" style="padding: 0.75rem 1.75rem;">User Dashboard</a>
+        </section>
+
+        <section class="status-card">
+            <div class="status-header">
+                <h2>System Health</h2>
+                <div class="status-badge pulse" id="system-status-badge">
+                    <span class="status-dot"></span>
+                    <span id="status-text">System Status: Running</span>
+                </div>
+            </div>
+            <div class="status-details">
+                <div class="metric-item">
+                    <span class="metric-label">Backend Service</span>
+                    <span class="metric-value" id="service-name">behavioural-login-verification</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">API Health Check</span>
+                    <span class="metric-value highlight" id="api-status">Connecting...</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="placeholder-card">
+            <div class="icon-wrapper">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5:0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+            <h3>Module Integration Zone</h3>
+            <p class="placeholder-text">
+                Behavioural authentication modules will be integrated here.
+            </p>
+            <div class="module-tags">
+                <span class="tag" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7;">✓ Keystroke Dynamics (Step 3 Active)</span>
+                <span class="tag">Mouse Movement</span>
+                <span class="tag">Contextual Signals</span>
+                <span class="tag">Risk Engine</span>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>&copy; 2026 Behavioural Verification Security Platform &bull; Step 3 Prototype</p>
+        </footer>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

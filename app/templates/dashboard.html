@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Behavioural Verification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="background-glow"></div>
+    <main class="container">
+        <header class="header-card">
+            <div class="flex-header">
+                <div>
+                    <div class="badge badge-success">Authenticated Session</div>
+                    <h1>Welcome, {{ user.username }}</h1>
+                    <p class="subtitle">Authentication successful.</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm">Log Out</a>
+                </div>
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Latest Risk Evaluation & Explanation Card -->
+        {% if risk and risk.explanation %}
+        <section class="card" style="margin-bottom: 1.5rem;">
+            <div class="status-header">
+                <h2>Latest Login Risk Evaluation & Explanation</h2>
+                {% set sev = risk.explanation.overall_severity %}
+                {% if sev == 'normal' %}
+                    <span class="badge badge-success">Low Risk ({{ sev|upper }})</span>
+                {% elif sev == 'slightly unusual' %}
+                    <span class="badge badge-info" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">Notice ({{ sev|title }})</span>
+                {% elif sev == 'moderately unusual' %}
+                    <span class="badge badge-warning" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">Elevated ({{ sev|title }})</span>
+                {% else %}
+                    <span class="badge badge-danger" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">High ({{ sev|title }})</span>
+                {% endif %}
+            </div>
+
+            <div style="margin-top: 1rem; padding: 1.25rem; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
+                    <span style="font-size: 0.9rem; color: #94a3b8; font-weight: 500;">Calculated Risk Score</span>
+                    {% if risk.risk_score is not none %}
+                        <span style="font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: #f8fafc;">
+                            {{ (risk.risk_score * 100)|round|int }}% <span style="font-size: 0.85rem; color: #64748b; font-weight: 400;">({{ risk.risk_score }})</span>
+                        </span>
+                    {% else %}
+                        <span style="color: #94a3b8;">Insufficient Baseline Data</span>
+                    {% endif %}
+                </div>
+
+                {% if risk.risk_score is not none %}
+                <div style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; margin-bottom: 1rem;">
+                    <div style="height: 100%; width: {{ (risk.risk_score * 100)|round|int }}%; background: linear-gradient(90deg, #10b981 0%, #f59e0b 60%, #ef4444 100%); transition: width 0.3s ease;"></div>
+                </div>
+                {% endif %}
+
+                <p style="margin: 0.5rem 0 1rem 0; font-size: 0.95rem; color: #cbd5e1; line-height: 1.5;">
+                    <strong>Explanation Summary:</strong> {{ risk.explanation.summary }}
+                </p>
+
+                {% if risk.explanation.top_contributors %}
+                <div style="margin-bottom: 1.25rem;">
+                    <span style="font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Primary Contributors</span>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem; flex-wrap: wrap;">
+                        {% for contrib in risk.explanation.top_contributors %}
+                            <span style="background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); padding: 0.25rem 0.65rem; border-radius: 4px; font-size: 0.85rem; color: #e2e8f0;">
+                                • {{ contrib }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <h4 style="font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 1rem 0 0.75rem 0; font-weight: 600;">Signal Attribution Breakdown</h4>
+                <div style="display: grid; gap: 0.65rem;">
+                    {% for sig in risk.explanation.signals %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0.85rem; background: rgba(30, 41, 59, 0.5); border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                        <div>
+                            <strong style="color: #f1f5f9; font-size: 0.9rem;">{{ sig.label }}</strong>
+                            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.15rem;">{{ sig.status }}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            {% if sig.available %}
+                                <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #e2e8f0; font-weight: 600;">
+                                    Score: {{ sig.score }}
+                                </div>
+                                <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.15rem;">
+                                    Contrib: {{ (sig.relative_contribution * 100)|round|int }}%
+                                </div>
+                            {% else %}
+                                <span style="font-size: 0.8rem; color: #64748b;">Unavailable</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="status-card">
+            <div class="status-header">
+                <h2>User Identity Profile</h2>
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span>Session Active</span>
+                </div>
+            </div>
+            <div class="status-details">
+                <div class="metric-item">
+                    <span class="metric-label">User ID</span>
+                    <span class="metric-value">{{ user.id }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Registered Email</span>
+                    <span class="metric-value">{{ user.email }}</span>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>&copy; 2026 Behavioural Verification Security Platform &bull; Step 8 Dashboard</p>
+        </footer>
+    </main>
+</body>
+</html>

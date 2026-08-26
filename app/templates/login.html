@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Behavioural Login Verification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="background-glow"></div>
+    <main class="container">
+        <header class="header-card text-center">
+            <div class="badge">Security Login</div>
+            <h1>Account Portal</h1>
+            <p class="subtitle">Enter your credentials to access the secure portal.</p>
+            <div class="status-badge mt-2" id="keystroke-status-badge">
+                <span class="status-dot"></span>
+                <span>Behavioural analysis: active</span>
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="form-card">
+            <form action="{{ url_for('auth.login') }}" method="POST" id="login-form" autocomplete="off">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="Enter your username" value="{{ username or '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Sign In</button>
+            </form>
+
+            <div class="form-footer">
+                <p>Don't have an account? <a href="{{ url_for('auth.register') }}" class="link">Register here</a></p>
+                <p class="mt-2"><a href="{{ url_for('main.index') }}" class="link-secondary">&larr; Back to System Status</a></p>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>&copy; 2026 Behavioural Verification Security Platform &bull; Step 4 Mouse Dynamics</p>
+        </footer>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/keystroke.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mouse.js') }}"></script>
+</body>
+</html>
