@@ -10,8 +10,14 @@ from app.services.baseline_service import (
     calculate_keystroke_baseline,
     calculate_mouse_baseline,
     calculate_context_baseline,
+    apply_rate_capped_drift,
     create_or_update_user_baseline,
     get_user_baseline
+)
+from app.services.otp_service import (
+    generate_otp_for_user,
+    verify_user_otp,
+    get_active_otp
 )
 
 __all__ = [
@@ -24,6 +30,11 @@ __all__ = [
     'calculate_keystroke_baseline',
     'calculate_mouse_baseline',
     'calculate_context_baseline',
+    'apply_rate_capped_drift',
     'create_or_update_user_baseline',
-    'get_user_baseline'
+    'get_user_baseline',
+    'generate_otp_for_user',
+    'verify_user_otp',
+    'get_active_otp'
 ]
+

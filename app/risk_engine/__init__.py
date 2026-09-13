@@ -18,6 +18,14 @@ from app.risk_engine.explanation import (
     SEVERITY_LEVELS
 )
 
+from app.risk_engine.decision import (
+    evaluate_risk_decision,
+    ACTION_ALLOW,
+    ACTION_STEP_UP_OTP,
+    ACTION_ALLOW_INITIAL,
+    ACTION_BLOCK
+)
+
 __all__ = [
     'normalized_feature_anomaly',
     'calculate_keystroke_anomaly',
@@ -33,5 +41,11 @@ __all__ = [
     'get_signal_status_text',
     'generate_explanation',
     'SIGNAL_DISPLAY_LABELS',
-    'SEVERITY_LEVELS'
+    'SEVERITY_LEVELS',
+    'evaluate_risk_decision',
+    'ACTION_ALLOW',
+    'ACTION_STEP_UP_OTP',
+    'ACTION_ALLOW_INITIAL',
+    'ACTION_BLOCK'
 ]
+

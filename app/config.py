@@ -21,6 +21,7 @@ class Config:
 
     # Behavioural Baseline Configuration
     BASELINE_DECAY_FACTOR = float(os.environ.get('BASELINE_DECAY_FACTOR', 0.8))
+    BASELINE_MAX_DRIFT_RATE = float(os.environ.get('BASELINE_MAX_DRIFT_RATE', 0.10))  # 10% max drift per update
 
     # Risk Scoring Engine Configuration
     RISK_WEIGHT_KEYSTROKE = float(os.environ.get('RISK_WEIGHT_KEYSTROKE', 0.25))
@@ -31,3 +32,13 @@ class Config:
     
     Z_THRESHOLD = float(os.environ.get('Z_THRESHOLD', 3.0))
     MIN_STD = float(os.environ.get('MIN_STD', 1e-4))
+
+    # Decision Engine & Step-Up Verification Thresholds
+    RISK_THRESHOLD_LOW = float(os.environ.get('RISK_THRESHOLD_LOW', 0.35))
+    RISK_THRESHOLD_HIGH = float(os.environ.get('RISK_THRESHOLD_HIGH', 0.50))
+    RISK_STEPUP_ENABLED = os.environ.get('RISK_STEPUP_ENABLED', 'true').lower() in ('true', '1', 'yes')
+
+    # OTP Verification Settings
+    OTP_EXPIRY_SECONDS = int(os.environ.get('OTP_EXPIRY_SECONDS', 300))  # 5 minutes
+    OTP_MAX_ATTEMPTS = int(os.environ.get('OTP_MAX_ATTEMPTS', 3))
+

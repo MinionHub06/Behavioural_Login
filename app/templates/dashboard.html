@@ -19,7 +19,8 @@
                     <h1>Welcome, {{ user.username }}</h1>
                     <p class="subtitle">Authentication successful.</p>
                 </div>
-                <div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <a href="{{ url_for('evaluation.evaluation_dashboard') }}" class="btn btn-secondary btn-sm" style="border-color: rgba(59, 130, 246, 0.4); color: #60a5fa;">⚔️ Evaluation Suite</a>
                     <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm">Log Out</a>
                 </div>
             </div>

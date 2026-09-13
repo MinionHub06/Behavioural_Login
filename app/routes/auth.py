@@ -98,10 +98,6 @@ def login():
             flash("Invalid username or password.", "danger")
             return render_template('login.html', username=username), 401
 
-        # Successful login: set session
-        session.clear()
-        session['user_id'] = user['id']
-
         # Step 3: Parse optional keystroke features
         ks_data = None
         keystroke_json = request.form.get('keystroke_data')
@@ -159,7 +155,8 @@ def login():
         except Exception:
             pass
 
-        # Step 7: Calculate Risk Score for current login attempt against user baseline
+        # Step 7 & 8: Calculate Risk Score and generate Explanation
+        risk_eval = None
         try:
             from app.risk_engine.scoring import evaluate_login_risk
             from app.models.risk import save_risk_score
@@ -171,20 +168,109 @@ def login():
             )
             save_risk_score(user['id'], risk_eval)
         except Exception:
-            # Risk calculation error must not block user login access
             pass
 
-        # Step 6: Recalculate rolling behavioural baseline for authenticated user
+        # Step 9: Decision Engine - evaluate risk thresholds for step-up OTP
+        from app.risk_engine.decision import evaluate_risk_decision, ACTION_STEP_UP_OTP
+        decision = evaluate_risk_decision(risk_eval)
+
+        if decision.get('action') == ACTION_STEP_UP_OTP:
+            # Elevated risk triggers Step-Up OTP Verification
+            from app.services.otp_service import generate_otp_for_user
+            otp_code = generate_otp_for_user(user['id'])
+
+            session.clear()
+            session['pending_user_id'] = user['id']
+            session['pending_risk_decision'] = decision
+            session['pending_risk_explanation'] = risk_eval.get('explanation') if risk_eval else {}
+            session['demo_otp'] = otp_code  # Stored for dev/demo display helper
+
+            flash("Unusual login activity detected. Please complete step-up verification.", "warning")
+            return redirect(url_for('auth.verify_otp'))
+
+        # Low risk or initial profile: authenticate session directly
+        session.clear()
+        session['user_id'] = user['id']
+
+        # Step 6: Recalculate rolling rate-capped behavioural baseline
         try:
             from app.services.baseline_service import create_or_update_user_baseline
             create_or_update_user_baseline(user['id'])
         except Exception:
-            # Baseline update error must not block user login access
             pass
 
         return redirect(url_for('auth.dashboard'))
 
     return render_template('login.html')
+
+@auth.route('/verify-otp', methods=['GET', 'POST'])
+def verify_otp():
+    """Step-Up OTP Verification route for elevated risk logins."""
+    pending_user_id = session.get('pending_user_id')
+    if not pending_user_id:
+        flash("No pending verification session. Please log in.", "warning")
+        return redirect(url_for('auth.login'))
+
+    user = get_user_by_id(pending_user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for('auth.login'))
+
+    decision = session.get('pending_risk_decision', {})
+    explanation = session.get('pending_risk_explanation', {})
+    demo_otp = session.get('demo_otp')
+
+    if request.method == 'POST':
+        otp_code = request.form.get('otp_code', '').strip()
+        from app.services.otp_service import verify_user_otp
+        is_valid, msg = verify_user_otp(pending_user_id, otp_code)
+
+        if is_valid:
+            # Step-up verification succeeded: authenticate user session
+            session.clear()
+            session['user_id'] = user['id']
+
+            # Update baseline safely after successful multi-factor verification
+            try:
+                from app.services.baseline_service import create_or_update_user_baseline
+                create_or_update_user_baseline(user['id'])
+            except Exception:
+                pass
+
+            flash("Identity verified successfully. Welcome to your dashboard!", "success")
+            return redirect(url_for('auth.dashboard'))
+        else:
+            flash(msg, "danger")
+            return render_template(
+                'otp_verify.html',
+                user=user,
+                decision=decision,
+                explanation=explanation,
+                demo_otp=demo_otp
+            ), 400
+
+    return render_template(
+        'otp_verify.html',
+        user=user,
+        decision=decision,
+        explanation=explanation,
+        demo_otp=demo_otp
+    )
+
+@auth.route('/resend-otp', methods=['POST'])
+def resend_otp():
+    """Resend a new OTP verification code."""
+    pending_user_id = session.get('pending_user_id')
+    if not pending_user_id:
+        flash("No pending verification session.", "warning")
+        return redirect(url_for('auth.login'))
+
+    from app.services.otp_service import generate_otp_for_user
+    otp_code = generate_otp_for_user(pending_user_id)
+    session['demo_otp'] = otp_code
+    flash("A new verification code has been sent.", "info")
+    return redirect(url_for('auth.verify_otp'))
+
 
 @auth.route('/dashboard', methods=['GET'])
 @login_required

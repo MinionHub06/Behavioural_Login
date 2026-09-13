@@ -17,9 +17,12 @@ def create_app(config_class: Type[Config] = Config) -> Flask:
     from app.routes.main import main as main_blueprint
     from app.routes.auth import auth as auth_blueprint
     from app.routes.behavior import behavior as behavior_blueprint
+    from app.routes.evaluation import eval_bp as eval_blueprint
     app.register_blueprint(main_blueprint, url_prefix='/')
     app.register_blueprint(auth_blueprint, url_prefix='/')
     app.register_blueprint(behavior_blueprint, url_prefix='/')
+    app.register_blueprint(eval_blueprint, url_prefix='/')
+
 
     # Register Error Handlers
     register_error_handlers(app)

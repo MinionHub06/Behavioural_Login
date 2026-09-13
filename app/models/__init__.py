@@ -34,6 +34,15 @@ from app.models.risk import (
     get_latest_user_risk_score
 )
 
+from app.models.otp import (
+    create_otp_table,
+    save_otp,
+    get_latest_otp,
+    increment_otp_attempts,
+    mark_otp_used,
+    delete_user_otps
+)
+
 __all__ = [
     'get_db', 
     'close_db', 
@@ -60,5 +69,12 @@ __all__ = [
     'get_user_baseline_record',
     'create_risk_scores_table',
     'save_risk_score',
-    'get_latest_user_risk_score'
+    'get_latest_user_risk_score',
+    'create_otp_table',
+    'save_otp',
+    'get_latest_otp',
+    'increment_otp_attempts',
+    'mark_otp_used',
+    'delete_user_otps'
 ]
+

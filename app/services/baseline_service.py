@@ -129,18 +129,72 @@ def calculate_context_baseline(context_samples: List[Dict[str, Any]]) -> Dict[st
         'login_hour_distribution': hour_distribution
     }
 
-def create_or_update_user_baseline(user_id: int, decay_factor: float = 0.8) -> Dict[str, Any]:
+def apply_rate_capped_drift(
+    previous_baseline: Dict[str, Any],
+    candidate_baseline: Dict[str, Any],
+    max_drift_rate: float = 0.10,
+    min_floor: float = 0.005
+) -> Dict[str, Any]:
+    """
+    Caps the maximum shift of any numeric baseline feature per update cycle to max_drift_rate (e.g. 10%).
+    This rate-capping protects against adversarial slow mimicry baseline poisoning while allowing
+    legitimate gradual user behavioral adaptation.
+    """
+    if not previous_baseline or not isinstance(previous_baseline, dict):
+        return candidate_baseline
+
+    capped = {}
+    for k, cand_val in candidate_baseline.items():
+        if cand_val is None or not isinstance(cand_val, (int, float)):
+            capped[k] = cand_val
+            continue
+
+        prev_val = previous_baseline.get(k)
+        if prev_val is None or not isinstance(prev_val, (int, float)):
+            capped[k] = cand_val
+            continue
+
+        prev_float = float(prev_val)
+        cand_float = float(cand_val)
+        max_delta = max(abs(prev_float) * max_drift_rate, min_floor)
+
+        lower_bound = prev_float - max_delta
+        upper_bound = prev_float + max_delta
+
+        clamped_val = max(lower_bound, min(cand_float, upper_bound))
+        dec = 4 if 'curvature' in k or 'jitter' in k else 2
+        capped[k] = round(clamped_val, dec)
+
+    return capped
+
+def create_or_update_user_baseline(
+    user_id: int,
+    decay_factor: float = 0.8,
+    drift_capped: bool = True,
+    max_drift_rate: float = 0.10
+) -> Dict[str, Any]:
     """
     Retrieves historical samples for user, calculates rolling recency-weighted baseline,
-    persists/updates database record, and returns the baseline structure.
+    applies rate-capped drift bounding if enabled, persists/updates database record,
+    and returns the baseline structure.
     """
+    existing_record = get_user_baseline_record(user_id)
+
     keystroke_samples = get_user_keystroke_features(user_id)
     mouse_samples = get_user_mouse_features(user_id)
     context_samples = get_user_context_features(user_id)
 
-    keystroke_bl = calculate_keystroke_baseline(keystroke_samples, decay_factor)
-    mouse_bl = calculate_mouse_baseline(mouse_samples, decay_factor)
+    keystroke_cand = calculate_keystroke_baseline(keystroke_samples, decay_factor)
+    mouse_cand = calculate_mouse_baseline(mouse_samples, decay_factor)
     context_bl = calculate_context_baseline(context_samples)
+
+    # Apply rate-capped drift if prior baseline exists
+    if drift_capped and existing_record and existing_record.get('status') in ('initial', 'established'):
+        keystroke_bl = apply_rate_capped_drift(existing_record.get('keystroke', {}), keystroke_cand, max_drift_rate)
+        mouse_bl = apply_rate_capped_drift(existing_record.get('mouse', {}), mouse_cand, max_drift_rate)
+    else:
+        keystroke_bl = keystroke_cand
+        mouse_bl = mouse_cand
 
     total_samples = max(len(keystroke_samples), len(mouse_samples), len(context_samples))
 
@@ -161,6 +215,7 @@ def create_or_update_user_baseline(user_id: int, decay_factor: float = 0.8) -> D
 
     save_or_update_baseline(user_id, baseline_payload)
     return get_user_baseline(user_id)
+
 
 def get_user_baseline(user_id: int) -> Dict[str, Any]:
     """

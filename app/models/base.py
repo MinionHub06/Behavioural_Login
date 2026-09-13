@@ -39,12 +39,14 @@ def init_db(app=None) -> None:
     from app.models.context import create_context_features_table
     from app.models.baseline import create_behavioural_baselines_table
     from app.models.risk import create_risk_scores_table
+    from app.models.otp import create_otp_table
     create_users_table(conn)
     create_keystroke_features_table(conn)
     create_mouse_features_table(conn)
     create_context_features_table(conn)
     create_behavioural_baselines_table(conn)
     create_risk_scores_table(conn)
+    create_otp_table(conn)
     conn.close()
 
 def init_app(app) -> None:

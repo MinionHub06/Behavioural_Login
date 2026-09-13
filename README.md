@@ -1,7 +1,7 @@
 # Behavioural Login Verification System
 
 ## Short Description
-A Cyber Security academic project implementing continuous user authentication using **Keystroke Dynamics**, **Mouse Movement kinetics**, and **Contextual Risk Signals** to calculate adaptive risk scores and trigger step-up verification.
+A Cyber Security academic project implementing continuous user authentication using **Keystroke Dynamics**, **Mouse Movement kinetics**, and **Contextual Risk Signals** to calculate adaptive risk scores, resist adversarial slow mimicry attacks via **Rate-Capped Drift Adaptation**, and trigger **Step-Up OTP Verification** with transparent explainable AI attributions.
 
 ## Implementation Status
 - **Step 1: Flask Project Foundation** - COMPLETE
@@ -12,132 +12,50 @@ A Cyber Security academic project implementing continuous user authentication us
 - **Step 6: Per-User Rolling Behavioural Baseline** - COMPLETE
 - **Step 7: Risk Scoring Engine** - COMPLETE
 - **Step 8: Explainable Risk Score / Explanation Module** - COMPLETE
-- *Future Steps: Risk-based decision engine, OTP step-up verification, rate-capped baseline adaptation, attack simulation, evaluation* - NOT IMPLEMENTED YET
+- **Step 9: Risk-Based Decision Engine & Adaptive Thresholds** - COMPLETE
+- **Step 10: Step-Up Verification (OTP Flow & Resend Mechanism)** - COMPLETE
+- **Step 11: Rate-Capped (Drift-Capped) Baseline Adaptation Engine** - COMPLETE
+- **Step 12: Attack Simulation & Comprehensive Evaluation Suite** - COMPLETE
 
 ---
 
-## Step 3 - Keystroke Dynamics
-Captures non-sensitive aggregate typing rhythm timing features (dwell time, flight time, typing speed, and speed variance). Passwords and individual key identities are **NEVER** recorded or stored.
+## Step 9 - Risk-Based Decision Engine
+Evaluates normalized composite risk against configurable thresholds (`RISK_THRESHOLD_LOW = 0.35`, `RISK_THRESHOLD_HIGH = 0.50`):
+- **Normal / Low Risk (`< 0.50`)**: Authenticates immediately with zero friction.
+- **Initial Profile (`insufficient_baseline`)**: Grants access seamlessly while establishing user baseline.
+- **Elevated / High Risk (`>= 0.50`)**: Enforces Step-Up verification with explicit reason and signal attribution.
 
 ---
 
-## Step 4 - Mouse Movement Dynamics
-Captures fine-motor kinetics (velocity, acceleration, path curvature, jitter score, and pause patterns). Raw coordinates `(x, y)` are kept temporarily in browser memory and are **NEVER** stored in SQLite or transmitted.
+## Step 10 - Step-Up OTP Verification
+- Generates cryptographically secure 6-digit OTP codes with 5-minute expiry (`OTP_EXPIRY_SECONDS = 300`).
+- Enforces a 3-attempt failure lockout (`OTP_MAX_ATTEMPTS = 3`).
+- Provides clean `/verify-otp` and `/resend-otp` endpoints with detailed risk explanation triggers and dev demo helper.
+- Only upon successful verification is the session fully authenticated and the user baseline updated.
 
 ---
 
-## Step 5 - Contextual Risk Signals
-Evaluates physical and environmental context: `device_id` (SHA-256 hash of browser signature), client IP / location abstraction (`LOCAL`/`UNKNOWN`), and UTC login hour vs 24-hour circular distribution. Neutral `unknown` flags on first login prevent false positive alarms.
+## Step 11 - Rate-Capped (Drift-Capped) Baseline Adaptation
+- Prevents **Adversarial Slow Mimicry Attacks** where an attacker repeatedly logs in with slight behavioral variations to poison the baseline.
+- Capped maximum drift per update cycle:
+  $$\text{bounded\_val} = \text{clamp}\Big(\text{candidate\_val}, \;\text{prev\_val} \times (1 - \delta), \;\text{prev\_val} \times (1 + \delta)\Big) \quad (\delta = 0.10)$$
+- Preserves legitimate long-term behavioral aging while suppressing attacker mimicry attempts.
 
 ---
 
-## Step 6 - Per-User Rolling Behavioural Baseline
-Establishes a statistical profile of normal user behavior using **exponential decay recency weighting** ($\text{decay\_factor} = 0.8$) and weighted arithmetic means across typing dynamics, mouse kinetics, and contextual distributions.
+## Step 12 - Attack Simulation & Academic Evaluation Suite
+Compares 4 system paradigms across genuine logins, automated bot attacks, and slow mimicry attacks:
+1. **Proposed Multi-Modal System** (Keystroke + Mouse + Context + Drift Cap + Explainable AI)
+2. **Standard Password + CAPTCHA Baseline**
+3. **Multi-Modal System Without Drift Cap** (Vulnerable to baseline poisoning)
+4. **Multi-Modal System Without Explanation Layer** (Black-box single score)
 
----
-
-## Step 7 - Risk Scoring Engine
-Calculates standardized deviations ($Z$-scores) bounded between $0.0$ and $1.0$ across keystroke, mouse, device, location, and time signals. Redistributes weights proportionally if any signal is unavailable.
-
----
-
-## Step 8 - Explainable Risk Score / Explanation Module
-
-### Why Explainability is Required
-Every calculated risk score must come with a clear, human-readable explanation identifying which signals contributed to the risk level. This eliminates "black box" decisions and provides auditability during cybersecurity reviews.
-
-### Signal Contribution Calculation
-Each available signal's raw contribution reflects both its anomaly score and its effective weight (after any missing-signal weight redistribution):
-$$\text{contribution}_i = \text{score}_i \times \text{effective\_weight}_i$$
-
-Relative contribution (percentage of total observed risk):
-$$\text{relative\_contribution}_i = \frac{\text{contribution}_i}{\sum_{k \in \text{available}} \text{contribution}_k} \quad (\text{returns } 0.0 \text{ if total contribution } = 0)$$
-
-### Severity Levels
-- **0.00 – 0.19**: `normal`
-- **0.20 – 0.49**: `slightly unusual`
-- **0.50 – 0.74**: `moderately unusual`
-- **0.75 – 1.00**: `highly unusual`
-
-### Why SHAP Library is Not Used Yet
-The current risk scoring engine is a transparent, explainable-by-design weighted anomaly model. Its feature attributions are computed directly and deterministically from signal scores and weights without needing heavy machine-learning approximations like `shap`.
-
-> **DETERMINISTIC EXPLANATION GUARANTEE**: *The explanation is generated deterministically from the risk engine's signal scores and weights, without random text generation or black-box ML models.*
-
----
-
-## Database Schema (SQLite: `database/cybersec.db`)
-
-### `risk_scores` Table
-```sql
-CREATE TABLE IF NOT EXISTS risk_scores (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    keystroke_score REAL,
-    mouse_score REAL,
-    device_score REAL,
-    location_score REAL,
-    time_score REAL,
-    risk_score REAL,
-    status TEXT NOT NULL,
-    signals_json TEXT NOT NULL,
-    explanation_json TEXT,
-    explanation_summary TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-```
-
----
-
-## Example Risk Score & Explanation Payload
-```json
-{
-    "user_id": 1,
-    "risk_score": 0.67,
-    "status": "evaluated",
-    "explanation": {
-        "overall_severity": "moderately unusual",
-        "summary": "Login behaviour differs moderately due to device, keystroke behaviour, login time.",
-        "top_contributors": ["Device", "Keystroke behaviour", "Login time"],
-        "signals": [
-            {
-                "signal": "device",
-                "label": "Device",
-                "score": 1.0,
-                "available": true,
-                "effective_weight": 0.20,
-                "contribution": 0.20,
-                "relative_contribution": 0.3704,
-                "severity": "highly unusual",
-                "status": "New device"
-            },
-            {
-                "signal": "keystroke",
-                "label": "Keystroke behaviour",
-                "score": 0.72,
-                "available": true,
-                "effective_weight": 0.25,
-                "contribution": 0.18,
-                "relative_contribution": 0.3333,
-                "severity": "moderately unusual",
-                "status": "Typing rhythm differs moderately from the user's baseline"
-            },
-            {
-                "signal": "time",
-                "label": "Login time",
-                "score": 1.0,
-                "available": true,
-                "effective_weight": 0.15,
-                "contribution": 0.15,
-                "relative_contribution": 0.2778,
-                "severity": "highly unusual",
-                "status": "Login time is outside the user's usual pattern"
-            }
-        ]
-    }
-}
-```
+### Evaluation Metrics
+- **Detection Accuracy**: Overall classification accuracy across all login attempts.
+- **False Acceptance Rate (FAR)**: Percentage of attacker/bot logins incorrectly admitted.
+- **False Rejection Rate (FRR)**: Percentage of legitimate users falsely triggered for step-up.
+- **Explainability Attribution Accuracy**: Frequency of correct dominant signal identification.
+- **Drift-Resistance**: Maintained risk elevation over multi-attempt mimicry sequences.
 
 ---
 
@@ -147,13 +65,14 @@ cybersec-project/
 │
 ├── app/
 │   ├── __init__.py          # Application Factory (Blueprint & error handler init)
-│   ├── config.py            # Risk weights & BASELINE_DECAY_FACTOR config
+│   ├── config.py            # Risk weights, thresholds, drift rate & OTP config
 │   │
 │   ├── routes/
 │   │   ├── __init__.py      # Blueprint exports
 │   │   ├── main.py          # Status & health routes (/, /health)
-│   │   ├── auth.py          # Auth routes (/register, /login, /dashboard, /logout)
-│   │   └── behavior.py      # API routes (/api/behavior/*, GET /api/baseline, GET /api/risk/latest)
+│   │   ├── auth.py          # Auth routes (/register, /login, /verify-otp, /resend-otp, /dashboard, /logout)
+│   │   ├── behavior.py      # API routes (/api/behavior/*, GET /api/baseline, GET /api/risk/latest)
+│   │   └── evaluation.py    # Evaluation portal (/evaluation, /api/evaluation/run, /api/evaluation/mimicry)
 │   │
 │   ├── models/
 │   │   ├── __init__.py      # DB helper exports
@@ -163,23 +82,29 @@ cybersec-project/
 │   │   ├── mouse.py         # Mouse features schema & persistence
 │   │   ├── context.py       # Context features schema & persistence
 │   │   ├── baseline.py      # Behavioural baseline schema & persistence
-│   │   └── risk.py          # Risk evaluation & explanation schema/persistence
+│   │   ├── risk.py          # Risk evaluation & explanation schema/persistence
+│   │   └── otp.py           # Step-up OTP schema, validation & attempt tracking
 │   │
 │   ├── services/
-│   │   ├── __init__.py      # Service exports
-│   │   ├── context_service.py  # Context evaluation service
-│   │   └── baseline_service.py # Recency-weighted rolling baseline engine
+│   │   ├── __init__.py          # Service exports
+│   │   ├── context_service.py   # Context evaluation service
+│   │   ├── baseline_service.py  # Recency-weighted & rate-capped baseline engine
+│   │   ├── otp_service.py       # Secure OTP generation, validation & lockout service
+│   │   └── evaluation_service.py# Synthetic attack generators & benchmark engine
 │   │
 │   ├── risk_engine/
 │   │   ├── __init__.py      # Risk engine exports
 │   │   ├── scoring.py       # Distance-from-baseline risk engine
-│   │   └── explanation.py   # Explainable risk feature attribution module
+│   │   ├── explanation.py   # Explainable risk feature attribution module
+│   │   └── decision.py      # Adaptive threshold & step-up decision engine
 │   │
 │   ├── templates/
 │   │   ├── index.html       # System status page with quick navigation
 │   │   ├── register.html    # Registration page
-│   │   ├── login.html       # Login page (with active behavioural indicator)
-│   │   └── dashboard.html   # Authenticated user dashboard with Risk Explanation UI
+│   │   ├── login.html       # Login page (with multi-modal capture)
+│   │   ├── otp_verify.html  # Step-up OTP verification screen with risk trigger
+│   │   ├── dashboard.html   # Authenticated user dashboard with Risk Explanation UI
+│   │   └── evaluation.html  # Interactive cybersecurity evaluation benchmark portal
 │   │
 │   └── static/
 │       ├── css/
@@ -189,52 +114,50 @@ cybersec-project/
 │           ├── keystroke.js # Client-side keystroke timing extraction
 │           └── mouse.js     # Client-side mouse dynamics extraction
 │
-├── database/
-│   └── .gitkeep             # Database directory (cybersec.db initialized automatically)
-│
 ├── tests/
 │   ├── test_app.py          # Base Flask & health tests (4 tests)
 │   ├── test_auth.py         # Authentication test suite (13 tests)
-│   ├── test_behavior.py     # Keystroke dynamics unit tests (6 tests)
-│   ├── test_mouse.py        # Mouse dynamics unit tests (13 tests)
+│   ├── test_behavior.py     # Keystroke dynamics unit tests (8 tests)
+│   ├── test_mouse.py        # Mouse dynamics unit tests (11 tests)
 │   ├── test_context.py      # Contextual risk signal unit tests (7 tests)
 │   ├── test_baseline.py     # Rolling baseline unit tests (7 tests)
 │   ├── test_risk.py         # Risk scoring engine unit tests (6 tests)
-│   └── test_explanation.py  # Explanation module unit tests (5 tests)
+│   ├── test_explanation.py  # Explanation module unit tests (5 tests)
+│   ├── test_decision.py     # Decision engine unit tests (4 tests)
+│   ├── test_drift_cap.py    # Rate-capped drift adaptation unit tests (3 tests)
+│   ├── test_otp.py          # OTP step-up verification unit tests (4 tests)
+│   └── test_evaluation.py   # Simulation & evaluation benchmark unit tests (4 tests)
 │
-├── view_db.py               # Clean SQLite database inspector script
-├── conftest.py              # Root path configuration for pytest
-├── .env.example             # Template for configuration settings
-├── .gitignore               # Excludes venv, db, pycache
+├── evaluate.py              # Academic evaluation CLI script (prints formatted tables)
+├── view_db.py               # SQLite database inspector script
 ├── requirements.txt         # Dependencies
 ├── run.py                   # Development server execution script
-└── README.md                # Updated documentation & project status
+└── README.md                # Full system documentation
 ```
 
 ---
 
-## Requirements & Setup
-- Python 3.10+
-- Flask 3.0+
-- python-dotenv
-- pytest
-
-```powershell
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-```
-
 ## How to Run Tests
-```powershell
+```bash
 pytest
 ```
+*Total: 76 automated tests across 12 test suites.*
 
-## How to Run the Application
-```powershell
+---
+
+## How to Run Evaluation Benchmark CLI
+```bash
+python evaluate.py
+```
+
+---
+
+## How to Run the Web Application
+```bash
 python run.py
 ```
 *Access application at: `http://127.0.0.1:5000`*
+*Interactive Evaluation Portal at: `http://127.0.0.1:5000/evaluation`*
 
 ---
 
@@ -245,7 +168,12 @@ python run.py
 | `/health` | GET | Public | JSON health check endpoint |
 | `/register` | GET, POST | Public | User registration |
 | `/login` | GET, POST | Public | User authentication & multi-modal signal capture |
+| `/verify-otp` | GET, POST | Public (Session) | Step-up OTP verification for anomalous logins |
+| `/resend-otp` | POST | Public (Session) | Regenerate and resend verification OTP |
 | `/dashboard` | GET | Authenticated | User dashboard with live Risk Explanation UI |
+| `/evaluation` | GET | Public | Cybersecurity benchmark & attack simulation portal |
+| `/api/evaluation/run` | POST | Public | Trigger live benchmark simulation |
+| `/api/evaluation/mimicry` | POST | Public | Trigger slow mimicry drift cap experiment |
 | `/logout` | GET | Authenticated | Session termination |
 | `/api/behavior/keystroke` | POST | Authenticated | Record aggregate keystroke dynamics features |
 | `/api/behavior/mouse` | POST | Authenticated | Record aggregate mouse movement features |

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity Evaluation & Attack Simulation</title>
+    <meta name="description" content="Evaluation benchmark comparing Detection Accuracy, FAR, FRR, and Slow Mimicry Drift-Resistance">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .eval-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        .eval-table th, .eval-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .eval-table th {
+            background: rgba(30, 41, 59, 0.8);
+            color: #94a3b8;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+        .eval-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .eval-table tr.highlight-row {
+            background: rgba(16, 185, 129, 0.08);
+            border-left: 3px solid #10b981;
+        }
+        .metric-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .badge-good { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .badge-warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .badge-bad { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+        .chart-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .chart-bar {
+            height: 12px;
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-glow"></div>
+    <main class="container" style="max-width: 1080px;">
+        <header class="header-card">
+            <div class="flex-header">
+                <div>
+                    <div class="badge">Academic Evaluation Benchmark</div>
+                    <h1>Security Evaluation & Attack Simulation</h1>
+                    <p class="subtitle">
+                        Comparative analysis of detection accuracy, False Acceptance Rate (FAR), False Rejection Rate (FRR), explainability, and resistance to adversarial slow mimicry attacks.
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-secondary btn-sm">Home</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">Login Portal</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Live Simulation Control Card -->
+        <section class="card" style="margin-bottom: 1.5rem;">
+            <div class="status-header">
+                <h2>Run Live Attack Simulation</h2>
+                <span class="badge badge-info" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">Interactive Engine</span>
+            </div>
+            <p style="font-size: 0.9rem; color: #94a3b8; margin: 0.5rem 0 1rem 0;">
+                Configure synthetic sample sizes and trigger simulations to evaluate system resistance against bots and slow mimicry baseline drift.
+            </p>
+            <form id="eval-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; align-items: end;">
+                <div>
+                    <label style="font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 0.25rem;">Genuine Logins</label>
+                    <input type="number" id="n_genuine" class="form-input" value="50" min="10" max="200" style="padding: 0.5rem;">
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 0.25rem;">Bot Attacks</label>
+                    <input type="number" id="n_bot" class="form-input" value="50" min="10" max="200" style="padding: 0.5rem;">
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 0.25rem;">Slow Mimicry Attacks</label>
+                    <input type="number" id="n_mimic" class="form-input" value="25" min="5" max="100" style="padding: 0.5rem;">
+                </div>
+                <div>
+                    <button type="submit" id="run-sim-btn" class="btn btn-primary" style="width: 100%; padding: 0.55rem 1rem;">
+                        ▶ Execute Simulation
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Table 1: Comparative Evaluation Matrix -->
+        <section class="card" style="margin-bottom: 1.5rem;">
+            <div class="status-header">
+                <h2>1. Comparative Benchmark Across Authentication Paradigms</h2>
+                <span class="badge badge-success">4 Architectures Compared</span>
+            </div>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.25rem;">
+                Evaluates detection performance on <span id="sample-summary-text"><strong>{{ results.genuine_tested }}</strong> Genuine Logins, <strong>{{ results.bot_attacks_tested }}</strong> Bot Attacks, and <strong>{{ results.mimicry_attacks_tested }}</strong> Slow Mimicry Attacks</span>.
+            </p>
+
+            <div class="table-responsive">
+                <table class="eval-table" id="matrix-table">
+                    <thead>
+                        <tr>
+                            <th>Architecture</th>
+                            <th>Accuracy</th>
+                            <th>FAR (False Accept)</th>
+                            <th>FRR (False Reject)</th>
+                            <th>Explainability Transparency</th>
+                            <th>Drift Resistance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key, sys in results.systems.items() %}
+                        <tr class="{% if key == 'proposed' %}highlight-row{% endif %}">
+                            <td>
+                                <strong>{{ sys.name }}</strong>
+                                {% if key == 'proposed' %}
+                                    <span style="display: block; font-size: 0.75rem; color: #10b981;">(Proposed System)</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="metric-badge {% if sys.accuracy >= 95 %}badge-good{% elif sys.accuracy >= 80 %}badge-warn{% else %}badge-bad{% endif %}">
+                                    {{ sys.accuracy }}%
+                                </span>
+                            </td>
+                            <td>
+                                <span class="metric-badge {% if sys.far == 0 %}badge-good{% elif sys.far < 10 %}badge-warn{% else %}badge-bad{% endif %}">
+                                    {{ sys.far }}%
+                                </span>
+                            </td>
+                            <td>
+                                <span class="metric-badge {% if sys.frr == 0 %}badge-good{% elif sys.frr < 10 %}badge-warn{% else %}badge-bad{% endif %}">
+                                    {{ sys.frr }}%
+                                </span>
+                            </td>
+                            <td>
+                                {% if sys.explanation_accuracy > 0 %}
+                                    <span style="color: #34d399; font-weight: 500;">✓ {{ sys.explanation_accuracy }}% Attributed</span>
+                                    <span style="display: block; font-size: 0.75rem; color: #64748b;">Deterministic breakdown</span>
+                                {% else %}
+                                    <span style="color: #64748b;">None (Black-box)</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span style="font-size: 0.85rem; color: #cbd5e1;">{{ sys.drift_resistance }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Table 2: Slow Mimicry Drift Comparison -->
+        <section class="card" style="margin-bottom: 1.5rem;">
+            <div class="status-header">
+                <h2>2. Adversarial Slow Mimicry Experiment (Drift-Capped vs Uncapped)</h2>
+                <span class="badge badge-warning" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">Attack Resistance</span>
+            </div>
+            <p style="font-size: 0.9rem; color: #cbd5e1; margin-top: 0.5rem; line-height: 1.5;">
+                When an attacker slowly mimics victim behavior over repeated logins, an <strong>uncapped baseline</strong> quickly adapts and drops risk to zero, admitting the attacker. The <strong>rate-capped baseline</strong> restricts drift to 10% per update, keeping the attacker's risk score elevated and triggering Step-Up OTP.
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1rem 0;">
+                <div style="padding: 1rem; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase;">Rate-Capped Avg Risk</div>
+                    <div id="avg-capped-val" style="font-size: 1.5rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #34d399; margin-top: 0.25rem;">
+                        {{ results.slow_mimicry_curve.avg_capped_risk }}
+                    </div>
+                    <div style="font-size: 0.75rem; color: #10b981; margin-top: 0.2rem;">Maintains elevated protection</div>
+                </div>
+
+                <div style="padding: 1rem; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                    <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase;">Uncapped Avg Risk</div>
+                    <div id="avg-uncapped-val" style="font-size: 1.5rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #f87171; margin-top: 0.25rem;">
+                        {{ results.slow_mimicry_curve.avg_uncapped_risk }}
+                    </div>
+                    <div style="font-size: 0.75rem; color: #f87171; margin-top: 0.2rem;">Vulnerable to gradual poisoning</div>
+                </div>
+
+                <div style="padding: 1rem; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                    <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase;">Max Drift Cap Rate</div>
+                    <div style="font-size: 1.5rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #60a5fa; margin-top: 0.25rem;">
+                        {{ (results.slow_mimicry_curve.max_drift_rate * 100)|round|int }}% / update
+                    </div>
+                    <div style="font-size: 0.75rem; color: #60a5fa; margin-top: 0.2rem;">Configured safety ceiling</div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="eval-table" id="mimicry-table">
+                    <thead>
+                        <tr>
+                            <th>Attempt</th>
+                            <th>Rate-Capped Risk</th>
+                            <th>Capped Decision</th>
+                            <th>Uncapped Risk</th>
+                            <th>Uncapped Decision</th>
+                            <th>Flagged Attribution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for step in results.slow_mimicry_curve.step_details %}
+                        <tr>
+                            <td style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">#{{ step.step }}</td>
+                            <td>
+                                <span class="metric-badge badge-good">{{ step.capped_risk }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-warning" style="font-size: 0.75rem;">{{ step.capped_action }}</span>
+                            </td>
+                            <td>
+                                <span class="metric-badge {% if step.uncapped_risk < 0.5 %}badge-bad{% else %}badge-warn{% endif %}">
+                                    {{ step.uncapped_risk }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if step.uncapped_action == 'ALLOW' %}badge-danger{% else %}badge-warning{% endif %}" style="font-size: 0.75rem;">
+                                    {{ step.uncapped_action }}
+                                </span>
+                            </td>
+                            <td style="font-size: 0.8rem; color: #cbd5e1;">
+                                {{ step.explanation_top|join(', ') if step.explanation_top else 'None' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Summary & Research Contributions -->
+        <section class="status-card">
+            <div class="status-header">
+                <h2>Research Objectives & Findings</h2>
+                <span class="badge badge-success">Review 0 Deliverables</span>
+            </div>
+            <div style="display: grid; gap: 1rem; margin-top: 1rem; font-size: 0.9rem; color: #cbd5e1; line-height: 1.5;">
+                <div style="padding: 0.75rem 1rem; background: rgba(30, 41, 59, 0.4); border-radius: 6px; border-left: 3px solid #10b981;">
+                    <strong>Multi-Modal Feature Fusion:</strong> Combining aggregate keystroke dynamics (dwell/flight variance) with mouse movement kinetics (velocity, acceleration, curvature, jitter) and contextual environmental signals dramatically outperforms static credentials and legacy CAPTCHAs.
+                </div>
+                <div style="padding: 0.75rem 1rem; background: rgba(30, 41, 59, 0.4); border-radius: 6px; border-left: 3px solid #3b82f6;">
+                    <strong>Adversarial Slow Mimicry Resistance:</strong> Capping the maximum allowable drift to 10% per update cycle ensures the rolling baseline adapts to legitimate behavioral aging while strictly repelling incremental poisoning attacks.
+                </div>
+                <div style="padding: 0.75rem 1rem; background: rgba(30, 41, 59, 0.4); border-radius: 6px; border-left: 3px solid #f59e0b;">
+                    <strong>Explainable AI (XAI) Attribution:</strong> Every elevated risk score is decomposed into explicit, deterministic feature contributions, eliminating black-box opacity and equipping security teams with actionable audit logs.
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>&copy; 2026 Behavioural Verification Security Platform &bull; Project Review 0 Evaluation Suite</p>
+        </footer>
+    </main>
+
+    <script>
+        document.getElementById('eval-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('run-sim-btn');
+            btn.disabled = true;
+            btn.innerText = "Simulating...";
+
+            const payload = {
+                n_genuine: parseInt(document.getElementById('n_genuine').value) || 50,
+                n_bot_attacks: parseInt(document.getElementById('n_bot').value) || 50,
+                n_mimicry_attacks: parseInt(document.getElementById('n_mimic').value) || 25
+            };
+
+            try {
+                const res = await fetch('/api/evaluation/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                // Update summary text
+                document.getElementById('sample-summary-text').innerHTML = 
+                    `<strong>${data.genuine_tested}</strong> Genuine Logins, <strong>${data.bot_attacks_tested}</strong> Bot Attacks, and <strong>${data.mimicry_attacks_tested}</strong> Slow Mimicry Attacks`;
+
+                // Update Matrix Table
+                const tbody = document.querySelector('#matrix-table tbody');
+                tbody.innerHTML = '';
+                for (const [key, sys] of Object.entries(data.systems)) {
+                    const isProposed = key === 'proposed';
+                    const tr = document.createElement('tr');
+                    if (isProposed) tr.className = 'highlight-row';
+
+                    const accBadge = sys.accuracy >= 95 ? 'badge-good' : (sys.accuracy >= 80 ? 'badge-warn' : 'badge-bad');
+                    const farBadge = sys.far === 0 ? 'badge-good' : (sys.far < 10 ? 'badge-warn' : 'badge-bad');
+                    const frrBadge = sys.frr === 0 ? 'badge-good' : (sys.frr < 10 ? 'badge-warn' : 'badge-bad');
+
+                    tr.innerHTML = `
+                        <td>
+                            <strong>${sys.name}</strong>
+                            ${isProposed ? '<span style="display: block; font-size: 0.75rem; color: #10b981;">(Proposed System)</span>' : ''}
+                        </td>
+                        <td><span class="metric-badge ${accBadge}">${sys.accuracy}%</span></td>
+                        <td><span class="metric-badge ${farBadge}">${sys.far}%</span></td>
+                        <td><span class="metric-badge ${frrBadge}">${sys.frr}%</span></td>
+                        <td>
+                            ${sys.explanation_accuracy > 0 ? 
+                                `<span style="color: #34d399; font-weight: 500;">✓ ${sys.explanation_accuracy}% Attributed</span><span style="display: block; font-size: 0.75rem; color: #64748b;">Deterministic breakdown</span>` : 
+                                '<span style="color: #64748b;">None (Black-box)</span>'}
+                        </td>
+                        <td><span style="font-size: 0.85rem; color: #cbd5e1;">${sys.drift_resistance}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+
+                // Update Mimicry Stats
+                const mimic = data.slow_mimicry_curve;
+                document.getElementById('avg-capped-val').innerText = mimic.avg_capped_risk;
+                document.getElementById('avg-uncapped-val').innerText = mimic.avg_uncapped_risk;
+
+                const mbody = document.querySelector('#mimicry-table tbody');
+                mbody.innerHTML = '';
+                for (const step of mimic.step_details) {
+                    const tr = document.createElement('tr');
+                    const uncapBadge = step.uncapped_risk < 0.5 ? 'badge-bad' : 'badge-warn';
+                    const uncapActBadge = step.uncapped_action === 'ALLOW' ? 'badge-danger' : 'badge-warning';
+
+                    tr.innerHTML = `
+                        <td style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">#${step.step}</td>
+                        <td><span class="metric-badge badge-good">${step.capped_risk}</span></td>
+                        <td><span class="badge badge-warning" style="font-size: 0.75rem;">${step.capped_action}</span></td>
+                        <td><span class="metric-badge ${uncapBadge}">${step.uncapped_risk}</span></td>
+                        <td><span class="badge ${uncapActBadge}" style="font-size: 0.75rem;">${step.uncapped_action}</span></td>
+                        <td style="font-size: 0.8rem; color: #cbd5e1;">${step.explanation_top.join(', ') || 'None'}</td>
+                    `;
+                    mbody.appendChild(tr);
+                }
+            } catch (err) {
+                alert('Simulation error: ' + err);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "▶ Execute Simulation";
+            }
+        });
+    </script>
+</body>
+</html>

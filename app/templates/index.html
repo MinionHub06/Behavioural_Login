@@ -22,14 +22,15 @@
         </header>
 
         <section class="nav-card text-center" style="background: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-            <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="width: auto; padding: 0.75rem 1.75rem;">Login Portal (Keystroke Active)</a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="width: auto; padding: 0.75rem 1.75rem;">Login Portal (Multi-Modal Active)</a>
+            <a href="{{ url_for('evaluation.evaluation_dashboard') }}" class="btn btn-secondary" style="padding: 0.75rem 1.75rem; border-color: rgba(59, 130, 246, 0.4); color: #60a5fa;">⚔️ Attack Simulation & Evaluation</a>
             <a href="{{ url_for('auth.register') }}" class="btn btn-secondary" style="padding: 0.75rem 1.75rem;">Register New Account</a>
             <a href="{{ url_for('auth.dashboard') }}" class="btn btn-secondary" style="padding: 0.75rem 1.75rem;">User Dashboard</a>
         </section>
 
         <section class="status-card">
             <div class="status-header">
-                <h2>System Health</h2>
+                <h2>System Health & Security Pipeline</h2>
                 <div class="status-badge pulse" id="system-status-badge">
                     <span class="status-dot"></span>
                     <span id="status-text">System Status: Running</span>
@@ -47,27 +48,28 @@
             </div>
         </section>
 
-        <section class="placeholder-card">
-            <div class="icon-wrapper">
+        <section class="placeholder-card" style="border-color: rgba(16, 185, 129, 0.3);">
+            <div class="icon-wrapper" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5:0 0 1 10 0v4"></path>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
             </div>
-            <h3>Module Integration Zone</h3>
-            <p class="placeholder-text">
+            <h3>Integrated Multi-Modal Verification Architecture</h3>
+            <p class="placeholder-text" style="color: #cbd5e1;">
                 Behavioural authentication modules will be integrated here.
             </p>
-            <div class="module-tags">
-                <span class="tag" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7;">✓ Keystroke Dynamics (Step 3 Active)</span>
-                <span class="tag">Mouse Movement</span>
-                <span class="tag">Contextual Signals</span>
-                <span class="tag">Risk Engine</span>
+            <div class="module-tags" style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
+                <span class="tag" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7;">✓ Keystroke Dynamics</span>
+                <span class="tag" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7;">✓ Mouse Kinetics</span>
+                <span class="tag" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7;">✓ Contextual Signals</span>
+                <span class="tag" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7;">✓ Rate-Capped Drift Baseline</span>
+                <span class="tag" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7;">✓ Risk Scoring & XAI Attribution</span>
+                <span class="tag" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7;">✓ Adaptive Step-Up OTP Engine</span>
             </div>
         </section>
 
         <footer class="footer">
-            <p>&copy; 2026 Behavioural Verification Security Platform &bull; Step 3 Prototype</p>
+            <p>&copy; 2026 Behavioural Verification Security Platform &bull; Project Review 0 Complete</p>
         </footer>
     </main>
 
